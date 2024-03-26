@@ -14,7 +14,7 @@ router.post('/signup', async (req, res) => {
     )
     // console.log(userAlreadyExist.rows[0])
     const userFound = userAlreadyExist.rows[0]
-    //1.2 if the users already exist thorw an error message otherwise step 2
+    //1.2 if the users already exist throw an error message otherwise step 2
     if (userFound) {
       throw new Error('This user already exist')
     }
@@ -25,8 +25,8 @@ router.post('/signup', async (req, res) => {
     // console.log(hashedPassword)
     //3. create a new user using the data that the client provides
     const newUser = await db.query(
-      `INSERT INTO users (first_name, last_name, email, password, profile_photo) 
-      VALUES ('${req.body.first_name}','${req.body.last_name}', '${req.body.email}', '${hashedPassword}', '${req.body.profile_photo}') RETURNING *`
+      `INSERT INTO users (first_name, last_name, email, password, profile_pic_url) 
+      VALUES ('${req.body.first_name}','${req.body.last_name}', '${req.body.email}', '${hashedPassword}', '${req.body.profile_pic_url}') RETURNING *`
     )
     // console.log(newUser)
     const userCreated = newUser.rows[0]
@@ -38,7 +38,7 @@ router.post('/signup', async (req, res) => {
     //4.2 add a secret word
     // console.log(secret)
     //4.3 create it
-    const token = jwt.sign(user, secret)
+    const token = jwt.sign(user, jwtSecret)
     // console.log(token)
     //5. send it via cookies and a message that the user was register succesfully
     res.cookie('jwt', token)
