@@ -49,7 +49,7 @@ router.post('/bookings', async (req, res) => {
       VALUES ('${house_id}', '${decodedToken.user_id}', '${booking_start_date}', '${booking_end_date}', '${message_to_host}', ${totalNights}, ${house.price_per_night}, ${totalPrice})
       RETURNING *
     `)
- 
+
     // Respond
     res.json(rows[0])
   } catch (err) {
@@ -57,69 +57,42 @@ router.post('/bookings', async (req, res) => {
   }
 })
 
-// params for GET bookings/1
-
-router.get('/bookings/:bookingId', async (req, res) => {
-  try {
-    let bookingId = Number(req.params.bookingId)
-    if (!bookingId) {
-      throw new Error('Please insert a number')
-    }
-    const { rows } = await db.query(
-      `SELECT * FROM bookings WHERE booking_id = ${req.params.bookingId}`
-    )
-    if (rows.length === 0) {
-      throw new Error(`No Booking found with ID ${req.params.bookingId}`)
-    }
-    res.json(rows)
-  } catch (err) {
-    console.error(err.message)
-    res.json(err.message)
-  }
-})
-
-//Update the /bookings route with queries
-
 router.get('/bookings', async (req, res) => {
   try {
-    let queryBookings =
-      'SELECT * FROM bookings ORDER BY booking_start_date DESC'
-    if (req.query.user) {
-      queryBookings = `SELECT * FROM bookings WHERE user_id = ${req.query.user} ORDER BY booking_start_date DESC`
+    // Validate Token
+    const decodedToken = jwt.verify(req.cookies.jwt, jwtSecret)
+    if (!decodedToken || !decodedToken.user_id || !decodedToken.email) {
+      throw new Error('Invalid authentication token')
     }
-    const { rows } = await db.query(queryBookings)
-    res.json(rows)
-  } catch (err) {
-    console.error(err.message)
-    res.json(err)
-  }
-})
-
-// POST bookings
-
-router.post('/bookings', async (req, res) => {
-  try {
-    const {
-      user_id,
-      booking_id,
-      house_id,
-      booking_start_date,
-      booking_end_date,
-      price,
-      message_to_host
-    } = req.body
-    console.log(req.body, user_id, booking_id)
-    const queryString = `
-      INSERT INTO bookings (user_id, booking_id, house_id, booking_start_date, booking_end_date, price, message_to_host)
-      VALUES (${user_id}, ${booking_id}, ${house_id}, '${booking_start_date}', '${booking_end_date}', ${price}, '${message_to_host}')
-      RETURNING *
+    // Get bookings
+    let sqlquery = `
+      SELECT
+        TO_CHAR(bookings.booking_start_date, 'D Mon yyyy') AS booking_start_date,
+        TO_CHAR(bookings.booking_end_date, 'D Mon yyyy') AS booking_end_date,
+        bookings.price_per_night AS price,
+        bookings.nights,
+        bookings.price,
+        houses.house_id,
+        houses.location,
+        houses.bedrooms,
+        houses.bathrooms,
+        houses.reviews_count,
+        houses.rating,
+        pictures.pic_url
+      FROM bookings
+      LEFT JOIN houses ON houses.house_id = bookings.house_id
+      LEFT JOIN (
+          SELECT DISTINCT ON (house_id) house_id, pic_url
+          FROM pictures
+      ) AS pictures ON pictures.house_id = houses.house_id
+      WHERE bookings.user_id = ${decodedToken.user_id}
+      ORDER BY bookings.booking_start_date DESC
     `
-    console.log(queryString)
-    const { rows } = await db.query(queryString)
+    // Respond
+    let { rows } = await db.query(sqlquery)
     res.json(rows)
   } catch (err) {
-    console.error(err.message)
-    res.json(err)
+    res.json({ error: err.message })
   }
 })
 
