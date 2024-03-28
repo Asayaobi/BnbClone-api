@@ -1,6 +1,61 @@
 import { Router } from 'express'
+import db from '../db.js'
+import jwt from 'jsonwebtoken'
+import { jwtSecret } from '../secrets.js'
 const router = Router()
-import db from '../db.js' // import the database connection
+
+router.post('/bookings', async (req, res) => {
+  try {
+    // Validate Token
+    const decodedToken = jwt.verify(req.cookies.jwt, jwtSecret)
+    if (!decodedToken || !decodedToken.user_id || !decodedToken.email) {
+      throw new Error('Invalid authentication token')
+    }
+    // Validate fields
+    let { house_id, booking_start_date, booking_end_date, message_to_host } =
+      req.body
+    if (
+      !house_id ||
+      !booking_start_date ||
+      !booking_end_date ||
+      !message_to_host
+    ) {
+      throw new Error(
+        'house_id, booking_start_date, booking_end_date, and message_to_host are required'
+      )
+    }
+    // Find house to get price
+    let houseFound = await db.query(
+      `SELECT house_id, price_per_night FROM houses WHERE house_id = ${house_id}`
+    )
+    if (!houseFound.rows.length) {
+      throw new Error(`House with id ${house_id} not found`)
+    }
+    const house = houseFound.rows[0]
+    // Calculate total nights
+    let checkingDate = new Date(req.body.booking_start_date)
+    let checkoutDate = new Date(req.body.booking_end_date)
+    if (checkoutDate <= checkingDate) {
+      throw new Error('booking_end_date must be after booking_start_date')
+    }
+    const totalNights = Math.round(
+      (checkoutDate - checkingDate) / (1000 * 60 * 60 * 24)
+    )
+    // Calculate total price
+    const totalPrice = totalNights * house.price_per_night
+    // Create booking
+    let { rows } = await db.query(`
+      INSERT INTO bookings (house_id, user_id, booking_start_date, booking_end_date, message_to_host, nights, price_per_night, price)
+      VALUES ('${house_id}', '${decodedToken.user_id}', '${booking_start_date}', '${booking_end_date}', '${message_to_host}', ${totalNights}, ${house.price_per_night}, ${totalPrice})
+      RETURNING *
+    `)
+ 
+    // Respond
+    res.json(rows[0])
+  } catch (err) {
+    res.json({ error: err.message })
+  }
+})
 
 // params for GET bookings/1
 
