@@ -1,6 +1,6 @@
 // import express
-
 import express from 'express'
+import cookieParser from 'cookie-parser'
 
 import photosRouter from './routes/photosRoutes.js'
 import authRouter from './routes/authRoutes.js'
@@ -13,6 +13,7 @@ const app = express()
 
 // Middleware to parse JSON bodies
 app.use(express.json())
+app.use(cookieParser())
 
 app.use(reviewsRouter)
 app.use(bookingsRouter)
