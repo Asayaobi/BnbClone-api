@@ -22,24 +22,18 @@ router.post('/signup', async (req, res) => {
     //2. Hash the password before store it in the data base
     const salt = await bcrypt.genSalt(10)
     const hashedPassword = await bcrypt.hash(req.body.password, salt)
-    // console.log(hashedPassword)
     //3. create a new user using the data that the client provides
     const newUser = await db.query(
       `INSERT INTO users (first_name, last_name, email, password, profile_pic_url) 
       VALUES ('${req.body.first_name}','${req.body.last_name}', '${req.body.email}', '${hashedPassword}', '${req.body.profile_pic_url}') RETURNING *`
     )
-    // console.log(newUser)
     const userCreated = newUser.rows[0]
-    // console.log(userCreated)
     //4. create the token
     //4.1 extract the data to create the token
     const user = { user_id: userCreated.user_id }
-    // console.log(user)
     //4.2 add a secret word
-    // console.log(secret)
-    //4.3 create it
+    //4.3 create token
     const token = jwt.sign(user, jwtSecret)
-    // console.log(token)
     //5. send it via cookies and a message that the user was register succesfully
     res.cookie('jwt', token)
     res.json({ message: 'user succesfully register' })
@@ -91,8 +85,15 @@ router.post('/login', async (req, res) => {
 })
 
 router.get('/logout', (req, res) => {
-  res.clearCookie('jwt')
-  res.send('You are logged out')
+  try {
+    res.clearCookie('jwt', {
+      secure: true,
+      sameSite: 'none'
+    })
+    res.json({ message: 'You are logged out' })
+  } catch (err) {
+    res.json({ error: err.message })
+  }
 })
 
 router.get('/profile', async (req, res) => {
