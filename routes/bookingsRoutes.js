@@ -67,6 +67,7 @@ router.get('/bookings', async (req, res) => {
     // Get bookings
     let sqlquery = `
       SELECT
+        bookings.booking_id,
         TO_CHAR(bookings.booking_start_date, 'D Mon yyyy') AS booking_start_date,
         TO_CHAR(bookings.booking_end_date, 'D Mon yyyy') AS booking_end_date,
         bookings.price_per_night AS price,
@@ -110,11 +111,46 @@ router.delete('/bookings/:bookingId', async (req, res) => {
     res.json({ error: 'Please insert a valid data' })
   }
 })
+
+router.delete('/bookings/:bookingId', async (req, res) => {
+  try {
+    // Validate Token
+    const decodedToken = jwt.verify(req.cookies.jwt, jwtSecret)
+    if (!decodedToken || !decodedToken.user_id || !decodedToken.email) {
+      throw new Error('Invalid authentication token')
+    }
+
+    // Check if the booking exists for the user
+    const queryBookings = `
+      SELECT * FROM bookings 
+      WHERE booking_id = ${req.params.bookingId} AND user_id = ${decodedToken.user_id}
+    `
+    const { rows } = await db.query(queryBookings)
+    if (rows.length === 0) {
+      throw new Error(
+        'Booking does not exist or user is not authorized to delete this booking'
+      )
+    }
+
+    // Delete the booking
+    const { rowCount } = await db.query(`
+      DELETE FROM bookings 
+      WHERE booking_id = ${req.params.bookingId} AND user_id = ${decodedToken.user_id} 
+      RETURNING *
+    `)
+    if (rowCount === 0) {
+      throw new Error('User is not authorized to delete this booking')
+    }
+
+    // Return the deleted booking
+    res.json({
+      message: 'Booking deleted successfully',
+      deleted_booking: rows[0]
+    })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
 export default router
-
-// Similarly, update the /bookings route so that, by default and without any URL query, it responds with the list of bookings
-// sorted by latest "start date"("from", or "from_date" depending on the database column name) in descending order.
-
-// Update the /bookings route so that, if a user property is added to the request query, it should only return bookings that belong to (made by) that user, such as:
-
-// /bookings?user=1
