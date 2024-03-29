@@ -191,6 +191,23 @@ router.get('/locations', async (req, res) => {
   }
 })
 
+router.get('/listings', async (req, res) => {
+  try {
+    // Validate Token
+    const decodedToken = jwt.verify(req.cookies.jwt, jwtSecret)
+    if (!decodedToken || !decodedToken.user_id || !decodedToken.email) {
+      throw new Error('Invalid authentication token')
+    }
+    // Get houses
+    let query = `SELECT * FROM houses WHERE host_id = ${decodedToken.user_id}`
+    let { rows } = await db.query(query)
+    // Respond
+    res.json(rows)
+  } catch (err) {
+    res.json({ error: err.message })
+  }
+})
+
 router.delete('/houses/:houseId', async (req, res) => {
   try {
     // Validate Token
