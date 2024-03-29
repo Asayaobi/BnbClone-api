@@ -180,7 +180,17 @@ router.patch('/houses/:house_id', async (req, res) => {
   }
 })
 
-//DELETE with auth
+router.get('/locations', async (req, res) => {
+  try {
+    let query = `SELECT DISTINCT(location) FROM houses`
+    let { rows } = await db.query(query)
+    rows = rows.map((r) => r.location)
+    res.json(rows)
+  } catch (err) {
+    res.json({ error: err.message })
+  }
+})
+
 router.delete('/houses/:houseId', async (req, res) => {
   try {
     // Validate Token
