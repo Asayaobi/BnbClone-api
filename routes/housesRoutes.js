@@ -71,6 +71,54 @@ router.post('/houses', async (req, res) => {
   }
 })
 
+router.get('/houses', async (req, res) => {
+  try {
+    // build query base
+    let sqlquery =
+      'SELECT * FROM (SELECT DISTINCT ON (houses.house_id) houses.*, pictures.pic_url FROM houses'
+    let filters = []
+    // add photos
+    sqlquery += ` LEFT JOIN pictures ON houses.house_id = pictures.house_id `
+    // add WHERE
+    if (
+      req.query.location ||
+      req.query.max_price ||
+      req.query.min_rooms ||
+      req.query.search
+    ) {
+      sqlquery += ' WHERE '
+    }
+    // add filters
+    if (req.query.location) {
+      filters.push(`location = '${req.query.location}'`)
+    }
+    if (req.query.max_price) {
+      filters.push(`price_per_night <= '${req.query.max_price}'`)
+    }
+    if (req.query.min_rooms) {
+      filters.push(`bedrooms >= '${req.query.min_rooms}'`)
+    }
+    if (req.query.search) {
+      filters.push(`description LIKE '%${req.query.search}%'`)
+    }
+    // array to string divided by AND
+    sqlquery += filters.join(' AND ')
+    sqlquery += ') AS distinct_houses'
+    // add ORDER BY
+    if (req.query.sort === 'rooms') {
+      sqlquery += ` ORDER BY rooms DESC`
+    } else {
+      sqlquery += ` ORDER BY price_per_night ASC`
+    }
+    // Run query
+    let { rows } = await db.query(sqlquery)
+    // Respond
+    res.json(rows)
+  } catch (err) {
+    res.json({ error: err.message })
+  }
+})
+
 // Define a GET route for fetching a single house
 router.get('/houses/:houseId', async (req, res) => {
   try {
@@ -92,40 +140,40 @@ router.get('/houses/:houseId', async (req, res) => {
 })
 
 // Update the /houses route with query using queryString
-router.get('/houses', async (req, res) => {
-  try {
-    //query for houses with 1 = 1 to start with true condition
-    let queryString = 'SELECT * FROM houses WHERE 1 = 1'
-    //query for location
-    if (req.query.location) {
-      queryString += ` AND location = '${req.query.location}'`
-    }
-    //query for max price
-    if (req.query.max_price) {
-      queryString += ` AND price_per_night <= '${req.query.max_price}'`
-    }
-    //query for min rooms
-    if (req.query.min_rooms) {
-      queryString += ` AND bedrooms >= '${req.query.min_rooms}'`
-    }
-    //query for search
-    if (req.query.search) {
-      queryString += ` AND description LIKE '%${req.query.search}%'`
-    }
-    // query for sort and order
-    if (req.query.sort && req.query.order) {
-      queryString += ` ORDER BY ${req.query.sort} ${req.query.order}`
-    } else if (req.query.sort) {
-      // query for sort and make it ASC by default
-      queryString += ` ORDER BY ${req.query.sort} ASC`
-    }
-    const { rows } = await db.query(queryString)
-    res.json(rows)
-  } catch (err) {
-    console.error(err.message)
-    res.json(err)
-  }
-})
+// router.get('/houses', async (req, res) => {
+//   try {
+//     //query for houses with 1 = 1 to start with true condition
+//     let queryString = 'SELECT * FROM houses WHERE 1 = 1'
+//     //query for location
+//     if (req.query.location) {
+//       queryString += ` AND location = '${req.query.location}'`
+//     }
+//     //query for max price
+//     if (req.query.max_price) {
+//       queryString += ` AND price_per_night <= '${req.query.max_price}'`
+//     }
+//     //query for min rooms
+//     if (req.query.min_rooms) {
+//       queryString += ` AND bedrooms >= '${req.query.min_rooms}'`
+//     }
+//     //query for search
+//     if (req.query.search) {
+//       queryString += ` AND description LIKE '%${req.query.search}%'`
+//     }
+//     // query for sort and order
+//     if (req.query.sort && req.query.order) {
+//       queryString += ` ORDER BY ${req.query.sort} ${req.query.order}`
+//     } else if (req.query.sort) {
+//       // query for sort and make it ASC by default
+//       queryString += ` ORDER BY ${req.query.sort} ASC`
+//     }
+//     const { rows } = await db.query(queryString)
+//     res.json(rows)
+//   } catch (err) {
+//     console.error(err.message)
+//     res.json(err)
+//   }
+// })
 
 // PATCH for houses
 router.patch('/houses/:house_id', async (req, res) => {
