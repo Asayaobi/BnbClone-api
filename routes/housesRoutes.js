@@ -180,15 +180,32 @@ router.patch('/houses/:house_id', async (req, res) => {
   }
 })
 
-// DELETE houses
+//DELETE with auth
 router.delete('/houses/:houseId', async (req, res) => {
   try {
+    // Validate Token
+    const decodedToken = jwt.verify(req.cookies.jwt, jwtSecret)
+    if (!decodedToken || !decodedToken.user_id || !decodedToken.email) {
+      throw new Error('Invalid authentication token')
+    }
+    // check if the user user_id (decodedToken.user_id) is the host of the house specified by house_id.
+    const queryString = `
+      SELECT * FROM houses WHERE host_id = ${decodedToken.user_id} AND house_id = ${req.params.houseId}
+    `
+
+    const result = await db.query(queryString)
+    if (result.rowCount === 0) {
+      throw new Error('not authorized')
+    }
+
     const { rowCount } = await db.query(`
-    DELETE FROM houses WHERE house_id = ${req.params.houseId}`)
+    DELETE FROM houses WHERE house_id = ${req.params.houseId}
+    `)
     if (!rowCount) {
       throw new Error('Delete Failed')
     }
-    res.json(rowCount)
+    //response message
+    res.json({ message: `House ${req.params.houseId} is deleted` })
   } catch (err) {
     console.error(err)
     res.json({ error: 'Please insert a valid data' })
