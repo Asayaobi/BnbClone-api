@@ -119,63 +119,37 @@ router.get('/houses', async (req, res) => {
   }
 })
 
-// Define a GET route for fetching a single house
-router.get('/houses/:houseId', async (req, res) => {
+router.get('/houses/:house_id', async (req, res) => {
   try {
-    let houseId = Number(req.params.houseId)
-    if (!houseId) {
-      throw new Error('Please insert a number')
-    }
-    const { rows } = await db.query(
-      `SELECT * FROM houses WHERE house_id = ${req.params.houseId}`
+    let { rows } = await db.query(
+      `SELECT * FROM houses WHERE house_id = ${req.params.house_id}`
     )
-    if (rows.length === 0) {
-      throw new Error(`No house found with id ${req.params.houseId}`)
+    if (!rows.length) {
+      throw new Error(`No house found with id ${req.params.user_id}`)
     }
-    res.json(rows)
+    let house = rows[0]
+    // join user
+    let { rows: hostRows } = await db.query(
+      `SELECT user_id, profile_pic_url, first_name, last_name FROM users WHERE user_id = ${house.host_id}`
+    )
+    house.host = {
+      user_id: hostRows[0].user_id,
+      profile_pic_url: hostRows[0].profile_pic_url,
+      firstName: hostRows[0].first_name,
+      lastName: hostRows[0].last_name
+    }
+    // join photos
+    let { rows: photosRows } = await db.query(
+      `SELECT * FROM pictures WHERE house_id = ${house.house_id}`
+    )
+    house.images = photosRows.map((p) => p.photo)
+    delete house.user_id
+    res.json(house)
   } catch (err) {
-    console.error(err.message)
-    res.json(err.message)
+    res.json({ error: err.message })
   }
 })
 
-// Update the /houses route with query using queryString
-// router.get('/houses', async (req, res) => {
-//   try {
-//     //query for houses with 1 = 1 to start with true condition
-//     let queryString = 'SELECT * FROM houses WHERE 1 = 1'
-//     //query for location
-//     if (req.query.location) {
-//       queryString += ` AND location = '${req.query.location}'`
-//     }
-//     //query for max price
-//     if (req.query.max_price) {
-//       queryString += ` AND price_per_night <= '${req.query.max_price}'`
-//     }
-//     //query for min rooms
-//     if (req.query.min_rooms) {
-//       queryString += ` AND bedrooms >= '${req.query.min_rooms}'`
-//     }
-//     //query for search
-//     if (req.query.search) {
-//       queryString += ` AND description LIKE '%${req.query.search}%'`
-//     }
-//     // query for sort and order
-//     if (req.query.sort && req.query.order) {
-//       queryString += ` ORDER BY ${req.query.sort} ${req.query.order}`
-//     } else if (req.query.sort) {
-//       // query for sort and make it ASC by default
-//       queryString += ` ORDER BY ${req.query.sort} ASC`
-//     }
-//     const { rows } = await db.query(queryString)
-//     res.json(rows)
-//   } catch (err) {
-//     console.error(err.message)
-//     res.json(err)
-//   }
-// })
-
-// PATCH for houses
 router.patch('/houses/:house_id', async (req, res) => {
   try {
     const { location, bedrooms, bathrooms, description, price_per_night } =
