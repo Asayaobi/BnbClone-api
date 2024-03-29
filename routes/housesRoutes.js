@@ -1,37 +1,73 @@
 import { Router } from 'express'
-const router = Router()
 import db from '../db.js' // import the database connection
-
-// Houses
-// Let's continue with the "houses" route.
-// In the housesRoutes.js file, create a new POST route for /houses
-// It is common practice to add the POST route above the GET routes, in order to follow the CRUD sequence of operations (Create, Read, Update, Delete).
-// Make the new POST route insert a row in the houses table of the database using the data that comes from the req.body.
-// Make the route respond with the row of data inserted into the database.
-// Test, using Postman, that a POST request to http://localhost:4100/houses with a payload, results in the correct insertion of such data in the database.
+import jwt from 'jsonwebtoken'
+import { jwtSecret } from '../secrets.js'
+const router = Router()
 
 router.post('/houses', async (req, res) => {
   try {
-    const {
+    // Validate Token
+    const decodedToken = jwt.verify(req.cookies.jwt, jwtSecret)
+    if (!decodedToken || !decodedToken.user_id || !decodedToken.email) {
+      throw new Error('Invalid authentication token')
+    }
+    // Validate fields
+    let {
       location,
       bedrooms,
       bathrooms,
-      description,
       price_per_night,
-      host_id
+      description,
+      photos
     } = req.body
-    console.log(req.body, location, bedrooms)
-    const queryString = `
-      INSERT INTO houses (location, bedrooms, bathrooms, description, price_per_night, host_id)
-      VALUES ('${location}', ${bedrooms}, ${bathrooms}, '${description}', ${price_per_night}, ${host_id})
+    if (
+      !location ||
+      !bedrooms ||
+      !bathrooms ||
+      !price_per_night ||
+      !description ||
+      !photos
+    ) {
+      throw new Error(
+        'location, bedrooms, bathrooms, price, descriptions, and photos are required'
+      )
+    }
+    // Validate photos
+    if (!Array.isArray(photos)) {
+      throw new Error('photos must be an array')
+    }
+    if (!photos.length) {
+      throw new Error('photos array cannot be empty')
+    }
+    if (!photos.every((p) => typeof p === 'string' && p.length)) {
+      throw new Error('all photos must be strings and must not be empty')
+    }
+    // Create house
+    let houseCreated = await db.query(`
+      INSERT INTO houses (location, bedrooms, bathrooms, price_per_night, description, host_id)
+      VALUES ('${location}', '${bedrooms}', '${bathrooms}', '${price_per_night}', '${description}', '${decodedToken.user_id}') 
       RETURNING *
-    `
-    console.log(queryString)
-    const { rows } = await db.query(queryString)
-    res.json(rows)
+    `)
+    let house = houseCreated.rows[0]
+    // Create photos
+    let photosQuery = 'INSERT INTO pictures (house_id, pic_url) VALUES '
+    photos.forEach((p, i) => {
+      if (i === photos.length - 1) {
+        photosQuery += `(${house.house_id}, '${p}') `
+      } else {
+        photosQuery += `(${house.house_id}, '${p}'), `
+      }
+    })
+    photosQuery += 'RETURNING *'
+    let photosCreated = await db.query(photosQuery)
+    // Compose response
+    house.photo = photosCreated.rows[0].photo
+    house.reviews = 0
+    house.rating = 0
+    // Respond
+    res.json(house)
   } catch (err) {
-    console.error(err.message)
-    res.json(err)
+    res.json({ error: err.message })
   }
 })
 
