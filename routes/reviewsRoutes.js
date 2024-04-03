@@ -98,7 +98,7 @@ router.get('/reviews', async (req, res) => {
 })
 
 //For testing purpose
-// Define a GET route for fetching a single review
+// GET route for fetching a single review
 // router.get('/reviews/:reviewId', async (req, res) => {
 //   try {
 //     let reviewId = Number(req.params.reviewId)
@@ -119,7 +119,7 @@ router.get('/reviews', async (req, res) => {
 //   }
 // })
 
-// Define a GET route for fetching the list of reviews
+// GET route for fetching all reviews
 // router.get('/reviews', async (req, res) => {
 //   try {
 //     // query to sort reviews to show newest first
