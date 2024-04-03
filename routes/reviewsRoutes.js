@@ -1,22 +1,75 @@
 import { Router } from 'express'
+import db from '../db.js'
+import jwt from 'jsonwebtoken'
 const router = Router()
-import db from '../db.js' // import the database connection
 
 //POST route insert a row in the reviews table
 router.post('/reviews', async (req, res) => {
   try {
-    const { reviewer_id, house_id, review_text, star_rating, review_date } =
-      req.body
+    // Validate Token
+    const decodedToken = jwt.verify(req.cookies.jwt, jwtSecret)
+    if (!decodedToken || !decodedToken.user_id || !decodedToken.email) {
+      throw new Error('Invalid authentication token')
+    }
+
+    // Validate fields
+    let { house_id, review_text, star_rating } = req.body
+    if (!house_id || !review_text || !star_rating) {
+      throw new Error('house_id, review_text, and star_rating are required')
+    }
+
+    // Validate rating
+    if (star_rating < 0 || star_rating > 5) {
+      throw new Error('rating must be between 0 and 5')
+    }
+
+    // Get current date
+    let date = new Date()
+    date = date.getFullYear() + '-' + date.getMonth() + '-' + date.getDate()
+    const {
+      reviewer_id,
+      house_id: review_house_id,
+      review_text: review_review_text,
+      star_rating: review_star_rating,
+      review_date
+    } = req.body
+
+    // Insert review
+
+    let { rows } = await db.query(`
+      INSERT INTO reviews (house_id, reviewer_id, review_date, review_text, star_rating)
+      VALUES (${house_id}, ${decodedToken.user_id}, '${date}', '${review_text}', ${star_rating})
+      RETURNING *
+    `)
+
     const queryString = `
       INSERT INTO reviews (reviewer_id, house_id, review_text, star_rating, review_date)
       VALUES ('${reviewer_id}', '${house_id}', '${review_text}', '${star_rating}', '${review_date}')
       RETURNING *
     `
-    const { rows } = await db.query(queryString)
-    res.json(rows)
+    // Add other fields
+
+    let { rows: usersRows } = await db.query(`
+      SELECT users.first_name, users.last_name, users.profile_pic_url FROM users
+      WHERE user_id = ${decodedToken.user_id}
+    `)
+    let review = rows[0]
+    review.author = usersRows[0]
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    })
+    const formatted = formatter.format(new Date(review.date))
+    review.date = formatted
+    res.json(review)
+
+    // Update house
+    let houseUpdated = await db.query(
+      `UPDATE houses SET reviews_count = reviews_count + 1, rating = ROUND((rating + ${rating}) / (reviews_count + 1)) WHERE house_id = ${house_id} RETURNING *`
+    )
   } catch (err) {
-    console.error(err.message)
-    res.json(err)
+    res.json({ error: err.message })
   }
 })
 
