@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import db from '../db.js'
 import jwt from 'jsonwebtoken'
+import { jwtSecret } from '../secrets.js'
 const router = Router()
 
 //POST route insert a row in the reviews table
@@ -23,32 +24,17 @@ router.post('/reviews', async (req, res) => {
       throw new Error('rating must be between 0 and 5')
     }
 
-    // Get current date
-    let date = new Date()
-    date = date.getFullYear() + '-' + date.getMonth() + '-' + date.getDate()
-    const {
-      reviewer_id,
-      house_id: review_house_id,
-      review_text: review_review_text,
-      star_rating: review_star_rating,
-      review_date
-    } = req.body
-
+    // Get current date in 'YYYY-MM-DD' format
+    let currentDate = new Date().toISOString().slice(0, 10)
+\
     // Insert review
-
     let { rows } = await db.query(`
-      INSERT INTO reviews (house_id, reviewer_id, review_date, review_text, star_rating)
-      VALUES (${house_id}, ${decodedToken.user_id}, '${date}', '${review_text}', ${star_rating})
-      RETURNING *
-    `)
+  INSERT INTO reviews (house_id, reviewer_id, review_date, review_text, star_rating)
+  VALUES (${house_id}, ${decodedToken.user_id}, '${currentDate}', '${review_text}', ${star_rating})
+  RETURNING *
+`)
 
-    const queryString = `
-      INSERT INTO reviews (reviewer_id, house_id, review_text, star_rating, review_date)
-      VALUES ('${reviewer_id}', '${house_id}', '${review_text}', '${star_rating}', '${review_date}')
-      RETURNING *
-    `
     // Add other fields
-
     let { rows: usersRows } = await db.query(`
       SELECT users.first_name, users.last_name, users.profile_pic_url FROM users
       WHERE user_id = ${decodedToken.user_id}
