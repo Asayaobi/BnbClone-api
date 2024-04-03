@@ -59,27 +59,6 @@ router.post('/reviews', async (req, res) => {
   }
 })
 
-// Define a GET route for fetching a single review
-// router.get('/reviews/:reviewId', async (req, res) => {
-//   try {
-//     let reviewId = Number(req.params.reviewId)
-//     if (!reviewId) {
-//       throw new Error('Please insert a number')
-//     }
-//     const { rows } = await db.query(
-//       `SELECT * FROM reviews WHERE review_id = ${req.params.reviewId}`
-//     )
-//     if (rows.length === 0) {
-//       throw new Error(`No review found with id ${req.params.reviewId}`)
-//     }
-//     console.log(rows)
-//     res.json(rows)
-//   } catch (err) {
-//     console.error(err.message)
-//     res.json(err.message)
-//   }
-// })
-
 router.get('/reviews', async (req, res) => {
   try {
     if (!req.query.house_id) {
@@ -117,6 +96,29 @@ router.get('/reviews', async (req, res) => {
     res.json({ error: err.message })
   }
 })
+
+//For testing purpose
+// Define a GET route for fetching a single review
+// router.get('/reviews/:reviewId', async (req, res) => {
+//   try {
+//     let reviewId = Number(req.params.reviewId)
+//     if (!reviewId) {
+//       throw new Error('Please insert a number')
+//     }
+//     const { rows } = await db.query(
+//       `SELECT * FROM reviews WHERE review_id = ${req.params.reviewId}`
+//     )
+//     if (rows.length === 0) {
+//       throw new Error(`No review found with id ${req.params.reviewId}`)
+//     }
+//     console.log(rows)
+//     res.json(rows)
+//   } catch (err) {
+//     console.error(err.message)
+//     res.json(err.message)
+//   }
+// })
+
 // Define a GET route for fetching the list of reviews
 // router.get('/reviews', async (req, res) => {
 //   try {
@@ -139,19 +141,19 @@ router.get('/reviews', async (req, res) => {
 // })
 
 //DELETE reviews
-router.delete('/reviews/:reviewId', async (req, res) => {
-  try {
-    const { rowCount } = await db.query(`
-    DELETE FROM reviews WHERE review_id = ${req.params.reviewId}
-    `)
-    if (!rowCount) {
-      throw new Error('Delete Failed')
-    }
-    res.json(rowCount)
-  } catch (err) {
-    console.error(err)
-    res.json({ error: 'Please insert a valid data' })
-  }
-})
+// router.delete('/reviews/:reviewId', async (req, res) => {
+//   try {
+//     const { rowCount } = await db.query(`
+//     DELETE FROM reviews WHERE review_id = ${req.params.reviewId}
+//     `)
+//     if (!rowCount) {
+//       throw new Error('Delete Failed')
+//     }
+//     res.json(rowCount)
+//   } catch (err) {
+//     console.error(err)
+//     res.json({ error: 'Please insert a valid data' })
+//   }
+// })
 
 export default router
