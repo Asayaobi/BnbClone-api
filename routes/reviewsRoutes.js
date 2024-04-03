@@ -26,7 +26,7 @@ router.post('/reviews', async (req, res) => {
 
     // Get current date in 'YYYY-MM-DD' format
     let currentDate = new Date().toISOString().slice(0, 10)
-\
+
     // Insert review
     let { rows } = await db.query(`
   INSERT INTO reviews (house_id, reviewer_id, review_date, review_text, star_rating)
