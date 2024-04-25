@@ -2,6 +2,8 @@
 import express from 'express'
 import cookieParser from 'cookie-parser'
 
+import 'dotenv/config'
+
 import photosRouter from './routes/photosRoutes.js'
 import authRouter from './routes/authRoutes.js'
 import housesRouter from './routes/housesRoutes.js'
