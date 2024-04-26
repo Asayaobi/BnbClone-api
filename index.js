@@ -30,6 +30,6 @@ app.use(photosRouter)
 app.use(housesRouter)
 app.use(usersRouter)
 
-app.listen(4000, () => {
-  console.log('Airbnb API ready on localhost:4000')
+app.listen(process.env.PORT || 4100, () => {
+  console.log(`Airbnb API ready on ${process.env.PORT || 4100}`)
 })
