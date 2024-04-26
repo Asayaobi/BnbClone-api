@@ -24,6 +24,6 @@ app.use(photosRouter)
 app.use(housesRouter)
 app.use(usersRouter)
 
-app.listen(4300, () => {
-  console.log('Airbnb API ready on localhost:4300')
+app.listen(4000, () => {
+  console.log('Airbnb API ready on localhost:4000')
 })
