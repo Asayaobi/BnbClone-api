@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import db from '../db.js'
 import jwt from 'jsonwebtoken'
-import { jwtSecret } from '../secrets.js'
+const jwtSecret = process.env.JWT_SECRET
 const router = Router()
 
 //POST route insert a row in the reviews table

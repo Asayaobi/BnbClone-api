@@ -54,7 +54,7 @@ router.patch('/users/:userId', async (req, res) => {
     res.json(rows)
   } catch (err) {
     console.error(err.message)
-    res.json({error: 'Please insert a valid data'})
+    res.json({ error: 'Please insert a valid data' })
   }
 })
 
