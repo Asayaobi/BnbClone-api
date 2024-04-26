@@ -1,9 +1,16 @@
-// import express
 import express from 'express'
 import cookieParser from 'cookie-parser'
-
 import cors from 'cors'
 import 'dotenv/config'
+
+const app = express()
+
+app.use(
+  cors({
+    origin: true,
+    credentials: true
+  })
+)
 
 import photosRouter from './routes/photosRoutes.js'
 import authRouter from './routes/authRoutes.js'
@@ -12,18 +19,9 @@ import usersRouter from './routes/usersRoutes.js'
 import bookingsRouter from './routes/bookingsRoutes.js'
 import reviewsRouter from './routes/reviewsRoutes.js'
 
-const app = express()
-
 // Middleware to parse JSON bodies
 app.use(express.json())
 app.use(cookieParser())
-
-// Use CORS middleware with allowed methods
-app.use(
-  cors({
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'] // Allow specified methods for cross-origin requests
-  })
-)
 
 app.use(reviewsRouter)
 app.use(bookingsRouter)
