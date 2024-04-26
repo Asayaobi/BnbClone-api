@@ -2,6 +2,7 @@
 import express from 'express'
 import cookieParser from 'cookie-parser'
 
+import cors from 'cors'
 import 'dotenv/config'
 
 import photosRouter from './routes/photosRoutes.js'
@@ -16,6 +17,13 @@ const app = express()
 // Middleware to parse JSON bodies
 app.use(express.json())
 app.use(cookieParser())
+
+// Use CORS middleware with allowed methods
+app.use(
+  cors({
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'] // Allow specified methods for cross-origin requests
+  })
+)
 
 app.use(reviewsRouter)
 app.use(bookingsRouter)
