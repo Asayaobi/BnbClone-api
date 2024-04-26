@@ -142,7 +142,7 @@ router.get('/houses/:house_id', async (req, res) => {
     let { rows: photosRows } = await db.query(
       `SELECT * FROM pictures WHERE house_id = ${house.house_id}`
     )
-    house.images = photosRows.map((p) => p.photo)
+    house.images = photosRows.map((p) => p.pic_url)
     delete house.user_id
     res.json(house)
   } catch (err) {
