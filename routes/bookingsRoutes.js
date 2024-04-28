@@ -68,8 +68,8 @@ router.get('/bookings', async (req, res) => {
     let sqlquery = `
       SELECT
         bookings.booking_id,
-        TO_CHAR(bookings.booking_start_date, 'YYYY-MM-DD') AS booking_start_date,
-    TO_CHAR(bookings.booking_end_date, 'YYYY-MM-DD') AS booking_end_date,
+        TO_CHAR(bookings.booking_start_date, 'DD Mon YYYY') AS booking_start_date,
+    TO_CHAR(bookings.booking_end_date, 'DD Mon YYYY') AS booking_end_date,
         bookings.price_per_night AS price,
         bookings.nights,
         bookings.price,
