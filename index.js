@@ -11,6 +11,7 @@ app.use(
     credentials: true
   })
 )
+app.options('*', cors())
 
 import photosRouter from './routes/photosRoutes.js'
 import authRouter from './routes/authRoutes.js'
