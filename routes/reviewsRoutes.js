@@ -14,7 +14,7 @@ router.post('/reviews', async (req, res) => {
     }
 
     // Validate fields
-    let { house_id, review_text, star_rating } = req.body
+    const { house_id, review_text, star_rating } = req.body
     if (!house_id || !review_text || !star_rating) {
       throw new Error('house_id, review_text, and star_rating are required')
     }
@@ -25,37 +25,30 @@ router.post('/reviews', async (req, res) => {
     }
 
     // Get current date in 'YYYY-MM-DD' format
-    let currentDate = new Date().toISOString().split('T')[0]
+    const currentDate = new Date().toISOString().split('T')[0]
 
     // Insert review
-    let { rows } = await db.query(`
-  INSERT INTO reviews (house_id, reviewer_id, review_date, review_text, star_rating)
-  VALUES (${house_id}, ${decodedToken.user_id}, '${currentDate}', '${review_text}', ${star_rating})
-  RETURNING *
-`)
+    const { rows } = await db.query(`
+      INSERT INTO reviews (house_id, reviewer_id, review_date, review_text, star_rating)
+      VALUES (${house_id}, ${decodedToken.user_id}, '${currentDate}', '${review_text}', ${star_rating})
+      RETURNING *
+    `)
 
     // Add other fields
-    let { rows: usersRows } = await db.query(`
+    const { rows: usersRows } = await db.query(`
       SELECT users.first_name, users.last_name, users.profile_pic_url FROM users
       WHERE user_id = ${decodedToken.user_id}
     `)
-    let review = rows[0]
+    const review = rows[0]
     review.author = usersRows[0]
-    // const formatter = new Intl.DateTimeFormat('en-US', {
-    //   day: '2-digit',
-    //   month: 'short',
-    //   year: 'numeric'
-    // })
-    // const formatted = formatter.format(new Date(review.date))
-    // review.date = formatted
-    res.json(review)
 
-    // Update house
-    let houseUpdated = await db.query(
-      `UPDATE houses SET reviews_count = reviews_count + 1, rating = ROUND((rating + ${rating}) / (reviews_count + 1)) WHERE house_id = ${house_id} RETURNING *`
-    )
-  } catch (err) {
-    res.json({ error: err.message })
+    // Send response
+    res.json(review)
+  } catch (error) {
+    console.error('Error creating review:', error)
+    res
+      .status(500)
+      .json({ error: 'An error occurred while processing your request' })
   }
 })
 
