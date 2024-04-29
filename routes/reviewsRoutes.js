@@ -41,13 +41,13 @@ router.post('/reviews', async (req, res) => {
     `)
     let review = rows[0]
     review.author = usersRows[0]
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    })
-    const formatted = formatter.format(new Date(review.date))
-    review.date = formatted
+    // const formatter = new Intl.DateTimeFormat('en-US', {
+    //   day: '2-digit',
+    //   month: 'short',
+    //   year: 'numeric'
+    // })
+    // const formatted = formatter.format(new Date(review.date))
+    // review.date = formatted
     res.json(review)
 
     // Update house
