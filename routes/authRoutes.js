@@ -56,7 +56,7 @@ router.post('/login', async (req, res) => {
       SELECT * FROM users WHERE email = '${req.body.email}'
     `)
     if (!rows.length) {
-      throw new Error('Either your email or your password is incorrect')
+      throw new Error('Your email is incorrect')
     }
     const user = rows[0]
     // Validate password
@@ -65,7 +65,7 @@ router.post('/login', async (req, res) => {
       user.password
     )
     if (!isPasswordValid) {
-      throw new Error('Either your email or your password is incorrect')
+      throw new Error('Your password is incorrect')
     }
     const token = jwt.sign(
       { user_id: user.user_id, email: user.email },
