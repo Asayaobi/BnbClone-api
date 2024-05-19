@@ -14,7 +14,6 @@ router.post('/bookings', async (req, res) => {
     // Validate fields
     let { house_id, booking_start_date, booking_end_date, message_to_host } =
       req.body
-    console.log(req.body)
     if (!house_id || !booking_start_date || !booking_end_date) {
       throw new Error(
         'house_id, booking_start_date, booking_end_date are required'
