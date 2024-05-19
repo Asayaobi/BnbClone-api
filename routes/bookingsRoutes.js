@@ -32,7 +32,7 @@ router.post('/bookings', async (req, res) => {
     let checkingDate = new Date(req.body.booking_start_date)
     let checkoutDate = new Date(req.body.booking_end_date)
     if (checkoutDate <= checkingDate) {
-      throw new Error('booking_end_date must be after booking_start_date')
+      throw new Error('check out date must be after check in date')
     }
     const totalNights = Math.round(
       (checkoutDate - checkingDate) / (1000 * 60 * 60 * 24)
