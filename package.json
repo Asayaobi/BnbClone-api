@@ -2,7 +2,7 @@
   "name": "b11g01-airbnb-api",
   "version": "1.0.0",
   "type": "module",
-  "description": "- Alejandro - Ana - Asaya",
+  "description": "API for Airbnb clone project",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon index.js",
