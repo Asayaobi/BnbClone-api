@@ -12,7 +12,8 @@ router.post('/bookings', async (req, res) => {
       throw new Error('Invalid authentication token')
     }
     // Validate fields
-    let { house_id, booking_start_date, booking_end_date } = req.body
+    let { house_id, booking_start_date, booking_end_date, message_to_host } =
+      req.body
     if (!house_id || !booking_start_date || !booking_end_date) {
       throw new Error(
         'house_id, booking_start_date, booking_end_date are required'
