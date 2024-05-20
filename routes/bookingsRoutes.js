@@ -95,20 +95,6 @@ router.get('/bookings', async (req, res) => {
 // DELETE bookings
 router.delete('/bookings/:bookingId', async (req, res) => {
   try {
-    const { rowCount } = await db.query(`
-    DELETE FROM bookings WHERE booking_id = ${req.params.bookingId}`)
-    if (!rowCount) {
-      throw new Error('Delete Failed')
-    }
-    res.json(rowCount)
-  } catch (err) {
-    console.error(err)
-    res.json({ error: 'Please insert a valid data' })
-  }
-})
-
-router.delete('/bookings/:bookingId', async (req, res) => {
-  try {
     // Validate Token
     const decodedToken = jwt.verify(req.cookies.jwt, jwtSecret)
     if (!decodedToken || !decodedToken.user_id || !decodedToken.email) {
