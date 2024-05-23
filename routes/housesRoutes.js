@@ -106,7 +106,7 @@ router.get('/houses', async (req, res) => {
     sqlquery += ') AS distinct_houses'
     // add ORDER BY
     if (req.query.sort === 'rooms') {
-      sqlquery += ` ORDER BY rooms DESC`
+      sqlquery += ` ORDER BY bedrooms DESC`
     } else {
       sqlquery += ` ORDER BY price_per_night ASC`
     }
