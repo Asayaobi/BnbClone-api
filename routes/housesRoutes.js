@@ -50,12 +50,12 @@ router.post('/houses', async (req, res) => {
     `)
     let house = houseCreated.rows[0]
     // Create photos
-    let photosQuery = 'INSERT INTO pictures (house_id, pic_url) VALUES '
+    let photosQuery = 'INSERT INTO pictures (pic_url, house_id) VALUES '
     photos.forEach((p, i) => {
       if (i === photos.length - 1) {
-        photosQuery += `(${house.house_id}, '${p}') `
+        photosQuery += `('${p}', ${house.house_id}) `
       } else {
-        photosQuery += `(${house.house_id}, '${p}'), `
+        photosQuery += `('${p}', ${house.house_id}), `
       }
     })
     photosQuery += 'RETURNING *'
@@ -152,28 +152,37 @@ router.get('/houses/:house_id', async (req, res) => {
 
 router.patch('/houses/:house_id', async (req, res) => {
   try {
+    // Validate Token
+    const decodedToken = jwt.verify(req.cookies.jwt, jwtSecret)
+    if (!decodedToken || !decodedToken.user_id || !decodedToken.email) {
+      throw new Error('Invalid authentication token')
+    }
     const { location, bedrooms, bathrooms, description, price_per_night } =
       req.body
-    let queryArray = []
-    if (location) {
-      queryArray.push(`location = '${location}'`)
+    //update houses table
+    // Validate fields
+    if (location || bedrooms || bathrooms || description || price_per_night) {
+      let queryArray = []
+      if (location) {
+        queryArray.push(`location = '${location}'`)
+      }
+      if (bedrooms) {
+        queryArray.push(`bedrooms = ${bedrooms}`)
+      }
+      if (bathrooms) {
+        queryArray.push(`bathrooms = ${bathrooms}`)
+      }
+      if (description) {
+        queryArray.push(`description = '${description}'`)
+      }
+      if (price_per_night) {
+        queryArray.push(`price_per_night = ${price_per_night}`)
+      }
+      let result = `UPDATE houses SET ${queryArray.join()} WHERE house_id = ${req.params.house_id} AND host_id = ${decodedToken.user_id} RETURNING *`
+      console.log(result)
+      const r = await db.query(result)
+      res.json(r.rows)
     }
-    if (bedrooms) {
-      queryArray.push(`bedrooms = ${bedrooms}`)
-    }
-    if (bathrooms) {
-      queryArray.push(`bathrooms = ${bathrooms}`)
-    }
-    if (description) {
-      queryArray.push(`description = '${description}'`)
-    }
-    if (price_per_night) {
-      queryArray.push(`price_per_night = ${price_per_night}`)
-    }
-    let result = `UPDATE houses SET ${queryArray.join()} WHERE house_id = ${req.params.house_id} RETURNING *`
-    console.log(result)
-    const r = await db.query(result)
-    res.json(r.rows)
   } catch (err) {
     console.error(err.message)
     res.json({ error: 'Please insert valid data' })
