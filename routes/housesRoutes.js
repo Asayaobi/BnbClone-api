@@ -157,8 +157,16 @@ router.patch('/houses/:house_id', async (req, res) => {
     if (!decodedToken || !decodedToken.user_id || !decodedToken.email) {
       throw new Error('Invalid authentication token')
     }
-    const { location, bedrooms, bathrooms, description, price_per_night } =
-      req.body
+    const {
+      location,
+      bedrooms,
+      bathrooms,
+      description,
+      price_per_night,
+      pictures
+    } = req.body
+
+    let house
     //update houses table
     // Validate fields
     if (location || bedrooms || bathrooms || description || price_per_night) {
@@ -178,11 +186,49 @@ router.patch('/houses/:house_id', async (req, res) => {
       if (price_per_night) {
         queryArray.push(`price_per_night = ${price_per_night}`)
       }
-      let result = `UPDATE houses SET ${queryArray.join()} WHERE house_id = ${req.params.house_id} AND host_id = ${decodedToken.user_id} RETURNING *`
-      console.log(result)
-      const r = await db.query(result)
-      res.json(r.rows)
+      let query = `UPDATE houses SET ${queryArray.join()} WHERE house_id = ${req.params.house_id} AND host_id = ${decodedToken.user_id} RETURNING *`
+      console.log('query for house', query)
+      const { rows } = await db.query(query)
+      house = rows[0]
+      console.log('house response from houses', house)
     }
+    //update pictures table
+    console.log('req body pics', req.body.pictures)
+
+    if (pictures && pictures.length) {
+      // Fetch existing pictures for the house
+      let { rows: pictureRows } = await db.query(
+        `SELECT * FROM pictures WHERE house_id = ${req.params.house_id}`
+      )
+      console.log('select from pictures', pictureRows)
+
+      // Update picture URLs based on request body
+      pictureRows = pictureRows.map((p, i) => {
+        if (pictures[i]) {
+          p.pic_url = req.body.pictures[i]
+        }
+        return p
+      })
+
+      // Construct UPDATE query
+      let picturesQuery = 'UPDATE pictures SET pic_url = (case '
+      pictureRows.forEach((p, i) => {
+        picturesQuery += `when picture_id = ${p.picture_id} then '${p.pic_url}' `
+      })
+      picturesQuery += 'end) WHERE picture_id in ('
+      pictureRows.forEach((p, i) => {
+        picturesQuery += `${p.picture_id}, `
+      })
+      picturesQuery = picturesQuery.slice(0, -2)
+      picturesQuery += ') RETURNING *'
+      console.log('pictures query', picturesQuery)
+      // Update pictures and store updated URLs in house.images
+      const { rows: updatedPictures } = await db.query(picturesQuery)
+      house.images = updatedPictures.map((p) => p.pic_url)
+    }
+
+    // Send the response
+    res.json(house)
   } catch (err) {
     console.error(err.message)
     res.json({ error: 'Please insert valid data' })
