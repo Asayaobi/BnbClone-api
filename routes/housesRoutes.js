@@ -73,7 +73,7 @@ router.post('/houses', async (req, res) => {
   WHERE h.house_id = ${house.house_id}
 `)
 
-    let houseWithPhotos = result.rows
+    let houseWithPhotos = result.rows[0]
     res.json(houseWithPhotos)
   } catch (err) {
     res.json({ error: err.message })
