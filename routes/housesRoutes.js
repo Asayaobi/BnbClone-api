@@ -197,21 +197,39 @@ router.patch('/houses/:house_id', async (req, res) => {
         `SELECT * FROM pictures WHERE house_id = ${req.params.house_id}`
       )
       console.log('getExistingPictures', getExistingPictures.rows)
-
       //if there's no existing picture
-      const insertPictures = (pictures) => {
-        for (let i = 0; i < pictures.length; i++) {
-          pictures[i] = `('${pictures[i]}', ${req.params.house_id})`
+      if (getExistingPictures.rowCount === 0) {
+        const insertPictures = (pictures) => {
+          for (let i = 0; i < pictures.length; i++) {
+            pictures[i] = `('${pictures[i]}', ${req.params.house_id})`
+          }
+          let picturesString = pictures.join(', ')
+          return picturesString
         }
-        let picturesString = pictures.join(', ')
-        return picturesString
-      }
-      const updatePictures = insertPictures(pictures)
-      console.log('updatePictures', updatePictures)
+        const updatePictures = insertPictures(pictures)
+        console.log('updatePictures', updatePictures)
 
-      const insertImagesQuery = `INSERT INTO pictures (pic_url, house_id) VALUES ${updatePictures}`
-      const picturesResponse = await db.query(insertImagesQuery)
-      console.log('picturesResponse', picturesResponse)
+        const insertImagesQuery = `INSERT INTO pictures (pic_url, house_id) VALUES ${updatePictures}`
+        const picturesResponse = await db.query(insertImagesQuery)
+        console.log('picturesResponse', `${picturesResponse.rowCount} inserted`)
+      }
+      let oldPictures = getExistingPictures.rows
+      console.log('oldPictures', oldPictures)
+      //if there're existed images
+      const replaceUrl = (oldPictures, picture) => {
+        for (let i = 0; i < oldPictures.length && i < picture.length; i++) {
+          oldPictures[i].pic_url = pictures[i]
+        }
+        return oldPictures
+      }
+      let newPictures = replaceUrl(oldPictures, pictures)
+      for (const p of newPictures) {
+        await db.query(`UPDATE pictures SET pic_url = $1 WHERE picture_id = $2`, [
+          p.pic_url,
+          p.picture_id
+        ])
+      }
+      console.log('update new pics', newPictures)
     }
 
     // Send the response
