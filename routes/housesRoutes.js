@@ -65,7 +65,16 @@ router.post('/houses', async (req, res) => {
     house.reviews = 0
     house.rating = 0
     // Respond
-    res.json(house)
+    // Retrieve the house data along with distinct pic_urls
+    let result = await db.query(`
+  SELECT DISTINCT h.*, p.pic_url
+  FROM houses h
+  LEFT JOIN pictures p ON h.house_id = p.house_id
+  WHERE h.house_id = ${house.house_id}
+`)
+
+    let houseWithPhotos = result.rows
+    res.json(houseWithPhotos)
   } catch (err) {
     res.json({ error: err.message })
   }
