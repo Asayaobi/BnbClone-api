@@ -154,13 +154,11 @@ router.patch('/houses/:house_id', async (req, res) => {
   try {
     // Validate Token
     const decodedToken = jwt.verify(req.cookies.jwt, jwtSecret)
-    console.log('decodedToken', decodedToken)
     if (!decodedToken || !decodedToken.user_id || !decodedToken.email) {
       throw new Error('Invalid authentication token')
     }
     const { location, bedrooms, bathrooms, description, price_per_night } =
       req.body
-    console.log('req.body', req.body)
 
     //update houses table
     let house
@@ -183,10 +181,8 @@ router.patch('/houses/:house_id', async (req, res) => {
         queryArray.push(`price_per_night = ${price_per_night}`)
       }
       let query = `UPDATE houses SET ${queryArray.join()} WHERE house_id = ${req.params.house_id} AND host_id = ${decodedToken.user_id} RETURNING *`
-      console.log('query for house', query)
       const updateHouse = await db.query(query)
       house = updateHouse.rows[0]
-      console.log('house response from houses', house)
     }
     //update pictures table
     console.log('req body pics', req.body.images)
@@ -196,7 +192,6 @@ router.patch('/houses/:house_id', async (req, res) => {
       let getExistingPictures = await db.query(
         `SELECT * FROM pictures WHERE house_id = ${req.params.house_id}`
       )
-      console.log('getExistingPictures', getExistingPictures.rows)
       //if there's no existing picture
       if (getExistingPictures.rowCount === 0) {
         const insertPictures = (pictures) => {
@@ -207,14 +202,11 @@ router.patch('/houses/:house_id', async (req, res) => {
           return picturesString
         }
         const updatePictures = insertPictures(pictures)
-        console.log('updatePictures', updatePictures)
 
         const insertImagesQuery = `INSERT INTO pictures (pic_url, house_id) VALUES ${updatePictures}`
-        const picturesResponse = await db.query(insertImagesQuery)
-        console.log('picturesResponse', `${picturesResponse.rowCount} inserted`)
+        await db.query(insertImagesQuery)
       }
       let oldPictures = getExistingPictures.rows
-      console.log('oldPictures', oldPictures)
       //if there're existed images
       const replaceUrl = (oldPictures, picture) => {
         for (let i = 0; i < oldPictures.length && i < picture.length; i++) {
@@ -224,12 +216,11 @@ router.patch('/houses/:house_id', async (req, res) => {
       }
       let newPictures = replaceUrl(oldPictures, pictures)
       for (const p of newPictures) {
-        await db.query(`UPDATE pictures SET pic_url = $1 WHERE picture_id = $2`, [
-          p.pic_url,
-          p.picture_id
-        ])
+        await db.query(
+          `UPDATE pictures SET pic_url = $1 WHERE picture_id = $2`,
+          [p.pic_url, p.picture_id]
+        )
       }
-      console.log('update new pics', newPictures)
     }
 
     // Send the response
