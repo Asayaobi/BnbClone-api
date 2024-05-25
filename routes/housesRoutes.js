@@ -154,20 +154,16 @@ router.patch('/houses/:house_id', async (req, res) => {
   try {
     // Validate Token
     const decodedToken = jwt.verify(req.cookies.jwt, jwtSecret)
+    console.log('decodedToken', decodedToken)
     if (!decodedToken || !decodedToken.user_id || !decodedToken.email) {
       throw new Error('Invalid authentication token')
     }
-    const {
-      location,
-      bedrooms,
-      bathrooms,
-      description,
-      price_per_night,
-      pictures
-    } = req.body
+    const { location, bedrooms, bathrooms, description, price_per_night } =
+      req.body
+    console.log('req.body', req.body)
 
-    let house
     //update houses table
+    let house
     // Validate fields
     if (location || bedrooms || bathrooms || description || price_per_night) {
       let queryArray = []
@@ -188,43 +184,34 @@ router.patch('/houses/:house_id', async (req, res) => {
       }
       let query = `UPDATE houses SET ${queryArray.join()} WHERE house_id = ${req.params.house_id} AND host_id = ${decodedToken.user_id} RETURNING *`
       console.log('query for house', query)
-      const { rows } = await db.query(query)
-      house = rows[0]
+      const updateHouse = await db.query(query)
+      house = updateHouse.rows[0]
       console.log('house response from houses', house)
     }
     //update pictures table
-    console.log('req body pics', req.body.pictures)
-
+    console.log('req body pics', req.body.images)
+    let pictures = req.body.images
     if (pictures && pictures.length) {
       // Fetch existing pictures for the house
-      let { rows: pictureRows } = await db.query(
+      let getExistingPictures = await db.query(
         `SELECT * FROM pictures WHERE house_id = ${req.params.house_id}`
       )
-      console.log('select from pictures', pictureRows)
+      console.log('getExistingPictures', getExistingPictures.rows)
 
-      // Update picture URLs based on request body
-      pictureRows = pictureRows.map((p, i) => {
-        if (pictures[i]) {
-          p.pic_url = req.body.pictures[i]
+      //if there's no existing picture
+      const insertPictures = (pictures) => {
+        for (let i = 0; i < pictures.length; i++) {
+          pictures[i] = `('${pictures[i]}', ${req.params.house_id})`
         }
-        return p
-      })
+        let picturesString = pictures.join(', ')
+        return picturesString
+      }
+      const updatePictures = insertPictures(pictures)
+      console.log('updatePictures', updatePictures)
 
-      // Construct UPDATE query
-      let picturesQuery = 'UPDATE pictures SET pic_url = (case '
-      pictureRows.forEach((p, i) => {
-        picturesQuery += `when picture_id = ${p.picture_id} then '${p.pic_url}' `
-      })
-      picturesQuery += 'end) WHERE picture_id in ('
-      pictureRows.forEach((p, i) => {
-        picturesQuery += `${p.picture_id}, `
-      })
-      picturesQuery = picturesQuery.slice(0, -2)
-      picturesQuery += ') RETURNING *'
-      console.log('pictures query', picturesQuery)
-      // Update pictures and store updated URLs in house.images
-      const { rows: updatedPictures } = await db.query(picturesQuery)
-      house.images = updatedPictures.map((p) => p.pic_url)
+      const insertImagesQuery = `INSERT INTO pictures (pic_url, house_id) VALUES ${updatePictures}`
+      const picturesResponse = await db.query(insertImagesQuery)
+      console.log('picturesResponse', picturesResponse)
     }
 
     // Send the response
