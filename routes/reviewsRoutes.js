@@ -43,22 +43,25 @@ router.post('/reviews', async (req, res) => {
     review.author = usersRows[0]
 
     //Update the average rating
-    const updateQuery = `UPDATE houses AS h
-SET
-    reviews_count = r.reviews_count,
-    rating = r.average_rating
-FROM (
-    SELECT
-        house_id,
-        COUNT(*) AS reviews_count,
-        AVG(star_rating) AS average_rating
-    FROM
+    const updateQuery = `WITH review_stats AS (
+    SELECT 
+        house_id, 
+        COUNT(review_id) AS reviews_count, 
+        AVG(star_rating) AS avg_rating
+    FROM 
         reviews
-    GROUP BY
+    GROUP BY 
         house_id
-) AS r
-WHERE
-    h.house_id = r.house_id;`
+)
+UPDATE 
+    houses
+SET 
+    reviews_count = rs.reviews_count,
+    rating = rs.avg_rating
+FROM 
+    review_stats rs
+WHERE 
+    houses.house_id = rs.house_id`
     await db.query(updateQuery)
 
     // Send response
