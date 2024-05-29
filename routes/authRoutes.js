@@ -30,7 +30,10 @@ router.post('/signup', async (req, res) => {
     const userCreated = newUser.rows[0]
     //4. create the token
     //4.1 extract the data to create the token
-    const user = { user_id: userCreated.user_id }
+    const user = {
+      user_id: userCreated.user_id,
+      email: userCreated.email
+    }
     //4.2 add a secret word
     //4.3 create token
     const token = jwt.sign(user, jwtSecret)
