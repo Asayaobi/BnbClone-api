@@ -194,7 +194,6 @@ router.patch('/houses/:house_id', async (req, res) => {
       house = updateHouse.rows[0]
     }
     //update pictures table
-    console.log('req body pics', req.body.images)
     let pictures = req.body.images
     if (pictures && pictures.length) {
       // Fetch existing pictures for the house
