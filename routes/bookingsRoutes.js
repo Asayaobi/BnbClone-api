@@ -65,7 +65,7 @@ router.get('/bookings', async (req, res) => {
         bookings.booking_id,
         TO_CHAR(bookings.booking_start_date, 'DD Mon YYYY') AS booking_start_date,
     TO_CHAR(bookings.booking_end_date, 'DD Mon YYYY') AS booking_end_date,
-        bookings.price_per_night AS price,
+        bookings.price_per_night,
         bookings.nights,
         bookings.price,
         houses.house_id,
