@@ -31,7 +31,6 @@ router.post('/photos', async (req, res) => {
     VALUES ('${picture_id}', '${pic_url}', '${house_id}')
     RETURNING *
     `
-    console.log(queryString)
     const { rows } = await db.query(queryString)
     res.json(rows)
   } catch (err) {
