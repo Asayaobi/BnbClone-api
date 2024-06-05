@@ -203,34 +203,44 @@ router.patch('/houses/:house_id', async (req, res) => {
       //if there's no existing picture
       if (getExistingPictures.rowCount === 0) {
         const insertPictures = (pictures) => {
-          for (let i = 0; i < pictures.length; i++) {
-            pictures[i] = `('${pictures[i]}', ${req.params.house_id})`
-          }
-          let picturesString = pictures.join(', ')
-          return picturesString
+          // Transform each picture URL into the sql query format
+          const formattedPictures = pictures.map(
+            (picture) => `('${picture}', ${req.params.house_id})`
+          )
+          // Join the formatted picture strings with a comma
+          return formattedPictures.join(', ')
         }
+
+        // Call insertPictures to get the formatted picture strings
         const updatePictures = insertPictures(pictures)
 
+        // Formulate the insert query
         const insertImagesQuery = `INSERT INTO pictures (pic_url, house_id) VALUES ${updatePictures}`
+
+        // Execute the insert query
         await db.query(insertImagesQuery)
       }
+
       let oldPictures = getExistingPictures.rows
       //if there're existed images
-      const replaceUrl = (oldPictures, picture) => {
-        for (let i = 0; i < oldPictures.length && i < picture.length; i++) {
-          oldPictures[i].pic_url = pictures[i]
-        }
-        return oldPictures
+      const replaceUrl = (oldPictures, newPictures) => {
+        return oldPictures.map((oldPicture, index) => {
+          if (index < newPictures.length) {
+            oldPicture.pic_url = newPictures[index]
+          }
+          return oldPicture
+        })
       }
-      let newPictures = replaceUrl(oldPictures, pictures)
-      for (const p of newPictures) {
+
+      let updatedPictures = replaceUrl(oldPictures, pictures)
+
+      for (const picture of updatedPictures) {
         await db.query(
           `UPDATE pictures SET pic_url = $1 WHERE picture_id = $2`,
-          [p.pic_url, p.picture_id]
+          [picture.pic_url, picture.picture_id]
         )
       }
     }
-
     // Send the response
     res.json(house)
   } catch (err) {
@@ -266,7 +276,7 @@ router.get('/listings', async (req, res) => {
         houses.bathrooms,
         houses.reviews_count,
         houses.rating,
-        houses.price_per_night AS price,
+        houses.price_per_night,
         pictures.pic_url
       FROM houses
       LEFT JOIN (
