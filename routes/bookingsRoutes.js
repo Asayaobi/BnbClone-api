@@ -6,6 +6,12 @@ const router = Router()
 
 router.post('/bookings', async (req, res) => {
   try {
+    //check if the user is logged in
+    if (!req.cookies.jwt) {
+      return res.json({
+        error: 'Please log in before booking.'
+      })
+    }
     // Validate Token
     const decodedToken = jwt.verify(req.cookies.jwt, jwtSecret)
     if (!decodedToken || !decodedToken.user_id || !decodedToken.email) {
